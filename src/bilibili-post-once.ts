@@ -2,7 +2,6 @@ import https from "node:https";
 import { Readable } from "node:stream";
 
 export const bilibiliWriteEndpoints = {
-  reply_dm: "https://api.vc.bilibili.com/web_im/v1/web_im/send_msg",
   share_video: "https://api.bilibili.com/x/v2/reply/add",
 } as const;
 

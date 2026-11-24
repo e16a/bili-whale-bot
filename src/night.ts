@@ -176,7 +176,9 @@ export async function runNight({
     const listCandidates: AgentTool<typeof empty> = {
       name: "list_candidates", label: "列出今晚的视频候选",
       description: "显示未浏览的候选标题与偏好命中，供你自行选择。", parameters: empty,
-      execute: async () => response(JSON.stringify(candidates.map(card => ({ ...card, title: cleanText(card.title) })))),
+      execute: async () => response(JSON.stringify(candidates.map(card => ({
+        ...card, title: cleanText(card.title), preferences: card.preferences.map(cleanText),
+      })))),
     };
     const readVideo: AgentTool<typeof videoArgs> = {
       name: "read_video", label: "读取公开视频资料", description: "按候选 BV 号读取简介和可用字幕。最多五条。",
@@ -287,11 +289,13 @@ export async function runNight({
     try {
       if (reads.signal?.aborted) return finish("failed", "aborted");
       const history = cleanText(ownerDiary.slice(-8000));
+      const { like, dislike } = home.settings.preferences;
       await agent.prompt(
         "按今晚的心情选择要看的视频，给读过的资料打分。可以少看。打完分再考虑给主人分享或回复，target 使用 BV 号或已验证来信的 handle。" +
         "分别用 write_diary 写给主人和自己，日记里保留看过的视频编号、关于内容的观察和真实的感受。两本写完就收工。\n" +
         JSON.stringify({
-          name: cleanText(home.settings.name), persona: cleanText(home.settings.persona), preferences: home.settings.preferences, history,
+          name: cleanText(home.settings.name), persona: cleanText(home.settings.persona), history,
+          preferences: { like: like.map(cleanText), dislike: dislike.map(cleanText) },
           verifiedOwnerEvents: events.map(({ handle, text, source }) => ({ handle, action: source.action, text: cleanText(text).slice(0, 800) })),
         }),
       );

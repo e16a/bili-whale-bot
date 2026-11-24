@@ -27,6 +27,7 @@
   },
   "files": [
     "dist",
+    "docs/ALPHA_RELEASE.md",
     "README.md",
     "LICENSE",
     "licenses",

@@ -10,12 +10,9 @@ BiliWhale Bot 源自 DSH 的 `bili-whale` 插件。在当时的部署里，逐�
 
 ## 安装与离线体验
 
-使用 Linux 和 Node.js 22.19 或更高版本。下载源码后，在项目目录安装并用本地模拟资料跑一晚。
+使用 Linux 和 Node.js 22.19 或更高版本，本版在 Node.js 24 上验收。从 [GitHub Release](https://github.com/e16a/bili-whale-bot/releases/tag/v0.1.0-alpha.1) 下载 `bili-whale-bot-0.1.0-alpha.1.tgz`，在下载目录安装即可。安装时 npm 会获取锁定的依赖。`demo` 使用模拟资料，运行时无需 B 站账号和模型密钥。
 
 ```bash
-npm ci --ignore-scripts
-npm run build
-npm pack --ignore-scripts
 npm install --global --prefix "$HOME/.local" --ignore-scripts ./bili-whale-bot-0.1.0-alpha.1.tgz
 export PATH="$HOME/.local/bin:$PATH"
 bili-whale demo
@@ -77,13 +74,27 @@ bili-whale init --owner YOUR_UID --bot BOT_UID
 
 ### 带一只已有的宠物搬家
 
-这个项目的原型曾保留原角色的 soul、两本日记和历史归档，让同一个角色继续生活。用独立版接续已有的宠物时，先初始化它自己的目录，再把旧 `SOUL.md` 或原人设文件的文字复制进 `persona.md`，并在 `config.json` 填上原来的名字和兴趣。完整的旧日记和会话留作本机档案。希望它下一晚就能想起的经历，可以挑几条带日期的主人可见内容，放进 `diaries/owner.md` 的末尾。
+用独立版接续已有的宠物时，先初始化它自己的目录，再把旧 `SOUL.md` 或原人设文件的文字复制进 `persona.md`，并在 `config.json` 填上原来的名字和兴趣。完整的旧日记和会话可留作本机档案。希望它下一晚就能想起的经历，可以挑几条带日期的主人可见内容，放进 `diaries/owner.md` 的末尾。
 
 ## 第一次正式运行
 
-在家目录下另存权限为 `0600` 的会话 JSON，使用现有的 Bot 账号会话。字段为 `sessdata`、`bili_jct` 和同一会话的可选 `buvid3`。在自己的终端配置 `DEEPSEEK_API_KEY`，然后在上海时间 21:00–24:00 启动 Bot。
+联网试跑使用 Bot 账号自己的现有 B 站会话。先把会话保存为项目和 Bot 数据目录之外的 JSON 文件，权限设为 `0600`。填入自己的会话值，下例是占位符。建议附上同一会话的 `buvid3`，部分接口会校验这项 Cookie。
+
+```json
+{
+  "sessdata": "YOUR_BOT_SESSDATA",
+  "bili_jct": "YOUR_BOT_BILI_JCT",
+  "buvid3": "YOUR_BOT_BUVID3"
+}
+```
+
+在自己的终端配置 `DEEPSEEK_API_KEY`，然后在上海时间 21:00–24:00 手动启动。可以在 Bash 里用下面的方式输入密钥，输入时屏幕不回显。
 
 ```bash
+chmod 600 "$HOME/.config/bili-whale-bot/session.json"
+read -rs -p 'DeepSeek API Key: ' DEEPSEEK_API_KEY
+printf '\n'
+export DEEPSEEK_API_KEY
 bili-whale run --session "$HOME/.config/bili-whale-bot/session.json"
 ```
 
@@ -103,17 +114,20 @@ bili-whale share --day YYYY-MM-DD --session "$HOME/.config/bili-whale-bot/sessio
 
 Agent 的工具只有列候选、读选中的视频、打分、生成互动草稿和写两本日记。唯一可试发的公开动作是向核验过的主人分享。换账号应初始化新的目录，让 UID 和额度账本保持绑定。平台拒绝、限流、登录失效或接口异常时会停止相关操作。
 
-DeepSeek 会收到人设、兴趣词、近期主人日记的片段、模型选取的视频资料和核验过的主人来信。凭证由宿主进程持有。工具注册约束 Agent 的操作范围，操作系统权限由部署者管理。
+兴趣词用于 B 站搜索。DeepSeek 会收到人设、兴趣词、近期主人日记的片段、模型选取的视频资料和核验过的主人来信。已有的自留日记保存在本机。宿主进程持有凭证。工具注册约束 Agent 的操作范围，操作系统权限由部署者管理。
 
 ## 当前版本与许可
 
-`0.1.0-alpha.1` 为安装验收版。在 Linux 和 Node.js 24.22.3 上，从打包文件安装到全新目录，初始化成功。离线演练完成两本日记和一条分享草稿。类型检查与 5 项测试通过。实际 B 站试发和通知送达仍待实机验收。
+`0.1.0-alpha.1` 为预发布版。在 Linux 和 Node.js 24.22.3 上，从安装包安装到全新目录并初始化。离线演练完成两本日记和一条分享草稿。该安装包的真实 B 站试发和通知送达待验收。 [Alpha 发布说明](docs/ALPHA_RELEASE.md)
 
 在 Linux x86_64 上用安装后的 `bili-whale demo` 跑了 5 次。离线演练的进程峰值 RSS 为 56.7–57.0 MiB，中位耗时 0.22 秒。含 npm 依赖的安装目录约 98 MiB。树莓派联网运行时的内存和耗时还待实测。
 
 依赖固定为 Pi Agent Core、Pi AI 和 Pi Schema 1.5.2。视频读取、评分和部分评论、私信适配复用了 `dsh-bili-whale` 的实现。[上游 MIT 许可](licenses/dsh-bili-whale-MIT.txt) · [本仓库许可](LICENSE)
 
 ```bash
+npm ci --ignore-scripts
 npm run typecheck
 npm test
+npm run build
+npm pack --ignore-scripts
 ```

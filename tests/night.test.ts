@@ -3,7 +3,7 @@ import { mkdtemp, readFile, realpath, rm, stat, symlink, writeFile } from "node:
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { test } from "node:test";
-import { createModels, fauxProvider } from "@earendil-works/pi-ai";
+import { createModels, fauxAssistantMessage, fauxProvider, fauxText, fauxToolCall } from "@earendil-works/pi-ai";
 import { demoAccount, demoClock, demoComment, demoTransport, demoVideo, runDemo } from "../src/demo.ts";
 import { initializeHome, loadHome } from "../src/home.ts";
 import { runNight } from "../src/night.ts";
@@ -56,6 +56,47 @@ test("offline demo uses the installed night path, writes two distinct diaries an
   assert.doesNotMatch(owner, /水洼边|local-demo-session/);
   assert.match(privateDiary, /水洼边/);
   assert.equal(JSON.parse(await readFile(join(home.state, "interaction-ledger.json"), "utf8")).entries.length, 0);
+});
+
+test("credentials pasted into preferences stay out of the model prompt and candidate results", async t => {
+  const demo = await runDemo();
+  const root = dirname(demo.home);
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const { ids } = await loadHome(demo.home);
+  const paths = await initializeHome(join(root, "edited-bot"), ids.ownerMid, ids.accountMid, demoClock);
+  const config = JSON.parse(await readFile(paths.config, "utf8"));
+  const fakeModelKey = "model-key-for-test";
+  await writeFile(paths.config, JSON.stringify({
+    ...config, interests: ["自然观察 local-demo-session"], avoid: [fakeModelKey, "c".repeat(32)],
+  }));
+  const home = await loadHome(paths.home);
+  const faux = fauxProvider();
+  faux.setResponses([
+    fauxAssistantMessage([fauxToolCall("list_candidates", {})], { stopReason: "toolUse" }),
+    fauxAssistantMessage([
+      fauxToolCall("write_diary", { diary: "owner", text: "今晚只看看候选。" }),
+      fauxToolCall("write_diary", { diary: "self", text: "我想休息一下。" }),
+    ], { stopReason: "toolUse" }),
+    fauxAssistantMessage([fauxText("收工。")]),
+  ]);
+  const models = createModels();
+  models.setProvider(faux.provider);
+  const stream = models.streamSimple.bind(models);
+  const contexts: string[] = [];
+  models.streamSimple = (model, context, options) => {
+    contexts.push(JSON.stringify(context));
+    return stream(model, context, options);
+  };
+
+  const result = await runNight({
+    home, models, model: faux.getModel(), modelApiKey: fakeModelKey, clock: demoClock, draw: () => 3,
+    reads: { credentialsPath: join(root, "demo-session.json"), transport: demoTransport, wait: async () => undefined },
+  });
+  assert.equal(result.status, "completed");
+  const sent = contexts.join("\n");
+  assert.ok(sent.includes(demoVideo.title));
+  assert.ok(sent.includes("[已省略]"));
+  for (const secret of ["local-demo-session", "c".repeat(32), fakeModelKey]) assert.ok(!sent.includes(secret));
 });
 
 test("disk-backed slots deny a sixth read, including across reopened calls", async t => {
