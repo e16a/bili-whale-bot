@@ -1,0 +1,12 @@
+node_modules/
+dist/
+*.tgz
+.env
+.env.*
+session.json
+credentials*.json
+config.json
+persona.md
+diaries/
+state/
+*.log
