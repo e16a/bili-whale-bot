@@ -2,11 +2,15 @@
 
 一个安静的 B 站观影伙伴。晚上按你设定的兴趣去找视频，自己决定看几条、怎么评、要不要分享。有想推荐给你的内容，它会写一两句具体感想。看完会分别留下一本给主人的日记和一本自留日记。
 
-用 TypeScript、Node.js、Pi Agent Core 和 Pi AI 实现，一次启动跑完一晚。运行程序有自己的配置和数据目录。例程使用本地模拟资料，可以先体验，再配置自己的账号和人设。
+## 为什么从 DSH 独立出来
+
+BiliWhale Bot 源自 DSH 的 `bili-whale` 插件。在当时的部署里，逐次授权会让夜间活动停下来等人确认。要让它安静地自己跑完一晚，就得给整个 DSH 会话开「完全访问」，权限也就超出了看视频、分享和写日记实际需要的范围。[原插件源码](https://github.com/Alterssss/dsh-bili-whale/tree/8b0009f8ce2ebdc421afcb2e727b19ac18912ec6)
+
+独立版用 Pi Agent Core 跑 Agent 循环，用 Pi AI 调用模型，整个程序随 Node.js 启动，办完一晚的事就退出。Agent 只有选片、读视频、打分、拟互动和写日记所需的工具。宿主管理 B 站凭证，把日记写进指定目录，并按 UID 核验分享对象。浏览和记日记可以按设定自行完成。[Pi SDK](https://github.com/earendil-works/pi)
 
 ## 安装与离线体验
 
-使用 Linux 和 Node.js 22.19 或更高版本。下载源码后，在项目目录安装并运行演练。
+使用 Linux 和 Node.js 22.19 或更高版本。下载源码后，在项目目录安装并用本地模拟资料跑一晚。
 
 ```bash
 npm ci --ignore-scripts
@@ -65,7 +69,7 @@ DeepSeek 会收到人设、兴趣词、近期主人日记的片段、模型选�
 
 `0.1.0-alpha.1` 为安装验收版。在 Linux 和 Node.js 24.22.3 上，从打包文件安装到全新目录，初始化成功。离线演练完成两本日记和一条分享草稿。类型检查与 5 项测试通过。实际 B 站试发和通知送达仍待实机验收。
 
-依赖固定为 Pi Agent Core、Pi AI 和 Pi Schema 1.5.2。视频读取、评分和部分评论、私信适配源自 MIT 许可的 `dsh-bili-whale`。 [Pi SDK](https://github.com/earendil-works/pi) · [上游源码](https://github.com/Alterssss/dsh-bili-whale/tree/8b0009f8ce2ebdc421afcb2e727b19ac18912ec6) · [上游许可](licenses/dsh-bili-whale-MIT.txt) · [本仓库许可](LICENSE)
+依赖固定为 Pi Agent Core、Pi AI 和 Pi Schema 1.5.2。视频读取、评分和部分评论、私信适配复用了 `dsh-bili-whale` 的实现。[上游 MIT 许可](licenses/dsh-bili-whale-MIT.txt) · [本仓库许可](LICENSE)
 
 ```bash
 npm run typecheck
